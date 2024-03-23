@@ -1,5 +1,12 @@
 ## UI ##
-FROM node:18-alpine3.17 as ui-builder
+FROM node:18-bullseye as ui-builder
+
+# Update package lists and install required packages
+RUN apt-get update && \
+    apt-get install -y \
+    openssl \
+    yarn
+
 RUN mkdir /app
 COPY web-client /app
 
@@ -9,7 +16,7 @@ WORKDIR /app
 RUN yarn install && yarn build
 
 ## BACKEND ##
-FROM golang:1.19.5-alpine3.17 as go-base
+FROM golang:1.19.5-bullseye as go-base
 
 ENV GOCACHE=/tmp/.go/cache
 ENV GOMODCACHE=/tmp/.go/modcache
@@ -50,7 +57,7 @@ FROM go-base as builder
 COPY --from=ui-builder /app/build /app/static/build
 RUN go build --tags=release -o permission-manager cmd/run-server.go
 
-FROM scratch as release
+FROM ubuntu:latest as release
 
 WORKDIR /app
 COPY --from=builder /app/permission-manager /app/permission-manager
